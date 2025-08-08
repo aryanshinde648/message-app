@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
 
       - name: Build with Maven
-        run: mvn install -DskipTests
+        run: mvn install
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
