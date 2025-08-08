@@ -25,9 +25,9 @@ jobs:
           - 3306:3306
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: messaging_app
-          MYSQL_USER: root
-          MYSQL_PASSWORD: admin
+          MYSQL_DATABASE: chat_app
+          MYSQL_USER: chat_user
+          MYSQL_PASSWORD: chat_pass
         options: >-
           --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
