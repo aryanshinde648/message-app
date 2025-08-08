@@ -1,11 +1,11 @@
 spring:
     application:
-        name: demo-app
+        name: message-app
 
     datasource:
         url: jdbc:mysql://localhost:3306/messaging_app
         username: root
-        password: password
+        password: admin
         driver-class-name: com.mysql.cj.jdbc.Driver
 
     jpa:
