@@ -9,6 +9,7 @@ import com.ma.message_apps.mapper.UserConversion;
 import com.ma.message_apps.repository.FriendRequestsRepository;
 import com.ma.message_apps.repository.MessageRepository;
 import com.ma.message_apps.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class MessagingRestController {
     @Autowired
     private UserRepository userRepository;

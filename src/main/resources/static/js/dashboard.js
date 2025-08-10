@@ -201,6 +201,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // --- Chat Tab Logic ---
     let selectedContactId = null;
+    let chatPollingInterval = null;
+    function startChatPolling(contactId) {
+        if (chatPollingInterval) clearInterval(chatPollingInterval);
+        chatPollingInterval = setInterval(() => {
+            loadChatMessages(contactId);
+        }, 3000); // Poll every 3 seconds
+    }
+    function stopChatPolling() {
+        if (chatPollingInterval) clearInterval(chatPollingInterval);
+        chatPollingInterval = null;
+    }
     function loadChatContacts() {
         const token = localStorage.getItem('jwtToken');
         fetch(`/api/friends/list/${window.currentUserId}`, {
@@ -221,11 +232,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const li = document.createElement('li');
                 li.className = 'list-group-item list-group-item-action';
                 li.textContent = contact.username || contact.email || contact.userId;
+                if (selectedContactId === contact.userId) {
+                    li.classList.add('active');
+                }
                 li.onclick = function() {
                     selectedContactId = contact.userId;
                     document.getElementById('chat-with-label').textContent = `Chat with ${contact.username || contact.email || contact.userId}`;
                     document.getElementById('chat-form').style.display = '';
                     loadChatMessages(selectedContactId);
+                    startChatPolling(selectedContactId);
+                    // Highlight selected contact
+                    document.querySelectorAll('#chat-contacts-list .list-group-item').forEach(item => item.classList.remove('active'));
+                    li.classList.add('active');
                 };
                 contactsList.appendChild(li);
             });
@@ -249,14 +267,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             messages.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = msg.senderId === window.currentUserId ? 'text-end mb-2' : 'text-start mb-2';
-                const date = msg.createdAt || msg.createdDate;
-                div.innerHTML = `
-                    <span class="badge bg-${msg.senderId === window.currentUserId ? 'primary' : 'secondary'}">${msg.messageText}</span><br>
-                    <small class="text-muted">${date ? new Date(date).toLocaleString() : ''}</small>
+                // Use sender.userId to determine who sent the message
+                const isOwn = msg.sender && msg.sender.userId === window.currentUserId;
+                let date = msg.createdAt;
+               // If date is a string and not null, format it
+                let formattedDate = '';
+                if (date) {
+                    try {
+                        formattedDate = new Date(date).toLocaleString();
+                    } catch (e) {
+                        formattedDate = date;
+                    }
+                }
+                const messageClass = isOwn ? 'chat-message-own' : 'chat-message-other';
+                const senderName = msg.sender && msg.sender.username ? msg.sender.username : 'Unknown';
+                chatMessages.innerHTML += `
+                    <div class="${messageClass}">
+                        <div class="chat-message-header">
+                            <span class="chat-sender">${isOwn ? 'You' : senderName}</span>
+                            <span class="chat-date">${formattedDate}</span>
+                        </div>
+                        <div class="chat-message-body">${msg.messageText}</div>
+                    </div>
                 `;
-                chatMessages.appendChild(div);
             });
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
@@ -272,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('chat-form').style.display = 'none';
                     document.getElementById('chat-with-label').textContent = 'Select a contact to chat';
                     document.getElementById('chat-messages').innerHTML = '';
+                    stopChatPolling();
                     chatTabInitialized = true;
                 } else {
                     setTimeout(tryLoadChatContacts, 100);
@@ -284,6 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('chat-form').style.display = 'none';
                 document.getElementById('chat-with-label').textContent = 'Select a contact to chat';
                 document.getElementById('chat-messages').innerHTML = '';
+                stopChatPolling();
             }
         });
     }

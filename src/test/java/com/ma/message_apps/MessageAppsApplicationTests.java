@@ -91,7 +91,7 @@ class MessageAppsApplicationTests {
 		message.setReceiver(savedUser2);
 		message.setMessageText("Hello, this is a test message!");
 		message.setIsRead(false);
-		message.setTimestamp(new Timestamp(System.currentTimeMillis()));
+		message.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 
 		Message savedMessage = messageRepository.save(message);
 

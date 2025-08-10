@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (result.token) {
                 window.storeJwtToken(result.token);
-                console.log('JWT token stored:', result.token);
-                msgDiv.innerHTML = `<span class='text-success'>${result.message}<br/>JWT Token: <code>${result.token}</code></span>`;
+               // console.log('JWT token stored:', result.token);
+              //  msgDiv.innerHTML = `<span class='text-success'>${result.message}<br/>JWT Token: <code>${result.token}</code></span>`;
                 window.location.href = '/dashboard';
             } else if (result.error) {
                 msgDiv.innerHTML = `<span class='text-danger'>${result.error}</span>`;

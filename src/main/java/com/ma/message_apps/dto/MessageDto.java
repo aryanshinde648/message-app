@@ -5,12 +5,14 @@ import com.ma.message_apps.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.sql.Timestamp;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(exclude = {"sender", "receiver"})
 public class MessageDto {
     private Integer messageId;
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
