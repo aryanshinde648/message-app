@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,18 +44,20 @@ public class AuthRestController {
                 response.put("error", "Invalid username or password");
                 return response;
             }
-            // Validate password using PasswordEncoder
             if (!passwordEncoder.matches(userDto.getPasswordHash(), user.getPasswordHash())) {
                 response.put("error", "Invalid username or password");
                 return response;
             }
-            // Authenticate using Spring Security
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userDto.getUsername(), userDto.getPasswordHash())
             );
-            // Generate JWT token
             String token = jwtUtil.generateToken(userDto.getUsername());
+            // Generate refresh token (UUID for simplicity)
+            String refreshToken = UUID.randomUUID().toString();
+            user.setRefreshToken(refreshToken);
+            userRepository.save(user);
             response.put("token", token);
+            response.put("refreshToken", refreshToken);
             log.info("User {} logged in successfully", userDto.getUsername());
             log.info("JWT Token: {}", token);
             response.put("message", "Login successful");
@@ -102,20 +105,75 @@ public class AuthRestController {
     }
 
     @GetMapping("/me")
-    public UserDto getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
+    public UserDto getCurrentUser(HttpServletRequest request) {
+        log.info("Received request to /api/auth/me");
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            log.info("Extracted token from Authorization header");
+            try {
+                String username = jwtUtil.extractUsername(token);
+                log.info("Extracted username from token: {}", username);
+                if (username != null && jwtUtil.validateToken(token, username)) {
+                    log.info("Token is valid for user: {}", username);
+                    User user = userRepository.findByUsername(username);
+                    if (user == null) {
+                        log.warn("User not found in database: {}", username);
+                        return null;
+                    }
+                    log.info("Found user in database: {}", user.getUsername());
+                    UserDto userDto = new UserDto();
+                    userDto.setUserId(user.getUserId());
+                    userDto.setUsername(user.getUsername());
+                    userDto.setEmail(user.getEmail());
+                    userDto.setStatus(user.getStatus());
+                    userDto.setCreatedAt(user.getCreatedAt());
+                    log.info("Returning user DTO for user: {}", userDto.getUsername());
+                    return userDto;
+                } else {
+                    log.warn("Token validation failed for username: {}", username);
+                }
+            } catch (Exception e) {
+                log.error("Error processing token: {}", e.getMessage());
+                return null;
+            }
+        } else {
+            log.warn("No Authorization header found or invalid format");
         }
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username);
-        if (user == null) return null;
-        UserDto userDto = new UserDto();
-        userDto.setUserId(user.getUserId());
-        userDto.setUsername(user.getUsername());
-        userDto.setEmail(user.getEmail());
-        userDto.setStatus(user.getStatus());
-        userDto.setCreatedAt(user.getCreatedAt());
-        // Add other fields as needed
-        return userDto;
+        return null;
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> payload) {
+        String refreshToken = payload.get("refreshToken");
+        log.info("Refresh token request received with token: {}", refreshToken);
+
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            log.warn("Refresh token missing in request");
+            return ResponseEntity.status(401).body("Refresh token missing");
+        }
+
+        User user = userRepository.findByRefreshToken(refreshToken);
+        if (user == null) {
+            log.warn("Invalid refresh token: {}", refreshToken);
+            return ResponseEntity.status(401).body("Invalid refresh token");
+        }
+
+        log.info("Valid refresh token found for user: {}", user.getUsername());
+
+        // Generate a new refresh token for better security
+        String newRefreshToken = java.util.UUID.randomUUID().toString();
+        user.setRefreshToken(newRefreshToken);
+        userRepository.save(user);
+
+        // Generate new access token
+        String newAccessToken = jwtUtil.generateToken(user.getUsername());
+
+        log.info("New tokens generated for user: {}", user.getUsername());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("accessToken", newAccessToken);
+        response.put("refreshToken", newRefreshToken);
+        return ResponseEntity.ok(response);
     }
 }

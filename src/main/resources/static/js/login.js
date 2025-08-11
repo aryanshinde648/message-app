@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             }
             if (result.token) {
-                window.storeJwtToken(result.token);
-               // console.log('JWT token stored:', result.token);
-              //  msgDiv.innerHTML = `<span class='text-success'>${result.message}<br/>JWT Token: <code>${result.token}</code></span>`;
+                // Store both access and refresh tokens
+                localStorage.setItem('jwtToken', result.token);
+                if (result.refreshToken) {
+                    localStorage.setItem('refreshToken', result.refreshToken);
+                }
                 window.location.href = '/dashboard';
             } else if (result.error) {
                 msgDiv.innerHTML = `<span class='text-danger'>${result.error}</span>`;

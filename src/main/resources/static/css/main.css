@@ -7,10 +7,53 @@ body {
     border-radius: 1rem;
 }
 .navbar {
-    border-bottom: 1px solid #e3e3e3;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-.form-label {
-    font-weight: 500;
+.navbar .nav-link:hover {
+    color: white !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+.navbar .btn-outline-light:hover {
+    background-color: white;
+    color: #667eea;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+.navbar-brand:hover {
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
+.user-welcome-badge {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+/* Fix navbar user display */
+.navbar .text-white-50 {
+    color: rgba(255,255,255,0.7) !important;
+}
+.navbar #current-user-name {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    background: rgba(255,255,255,0.15);
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+.navbar .user-name-highlight {
+    color: #ffeb3b !important;
+    font-weight: bold !important;
+    background: rgba(255, 235, 59, 0.2);
+    padding: 4px 12px;
+    border-radius: 15px;
+    display: inline-block;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 235, 59, 0.3);
+}
+.navbar .user-info {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
 }
 #chat-messages {
     height: 400px;

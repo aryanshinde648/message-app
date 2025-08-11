@@ -35,4 +35,7 @@ public class User {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+    @Column(name = "refresh_token")
+    private String refreshToken;
 }

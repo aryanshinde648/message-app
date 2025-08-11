@@ -1,4 +1,50 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Refresh Token Logic ---
+    async function apiFetch(url, options = {}) {
+        let token = localStorage.getItem('jwtToken');
+        if (!options.headers) options.headers = {};
+        options.headers['Authorization'] = 'Bearer ' + token;
+        options.headers['Accept'] = 'application/json';
+
+        console.log('Making API call to:', url);
+        let response = await fetch(url, options);
+
+        if (response.status === 401) {
+            console.log('Received 401, attempting token refresh...');
+            // Try to refresh token
+            const refreshToken = localStorage.getItem('refreshToken');
+            if (refreshToken) {
+                console.log('Refresh token found, calling /api/auth/refresh');
+                const refreshRes = await fetch('/api/auth/refresh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken })
+                });
+                if (refreshRes.ok) {
+                    console.log('Token refresh successful');
+                    const data = await refreshRes.json();
+                    localStorage.setItem('jwtToken', data.accessToken);
+                    if (data.refreshToken) {
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                    }
+                    console.log('Retrying original request with new token');
+                    // Retry original request
+                    options.headers['Authorization'] = 'Bearer ' + data.accessToken;
+                    response = await fetch(url, options);
+                } else {
+                    console.log('Token refresh failed, redirecting to login');
+                    window.location.href = '/login';
+                    return;
+                }
+            } else {
+                console.log('No refresh token found, redirecting to login');
+                window.location.href = '/login';
+                return;
+            }
+        }
+        return response;
+    }
+
     // Hide dashboard content initially
     const dashboardContent = document.querySelector('.container');
     if (dashboardContent) dashboardContent.style.display = 'none';
@@ -9,14 +55,18 @@ document.addEventListener('DOMContentLoaded', function() {
     loadingDiv.innerHTML = '<div class="spinner-border text-primary" role="status"></div><div>Validating session...</div>';
     document.body.appendChild(loadingDiv);
 
-    // Store JWT token after login
-    window.storeJwtToken = function(token) {
-        localStorage.setItem('jwtToken', token);
+    // Store JWT and refresh tokens after login
+    window.storeTokens = function(accessToken, refreshToken) {
+        localStorage.setItem('jwtToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
     };
 
-    // Remove JWT token on logout
+    // Remove tokens on logout
     window.logout = function() {
+        console.log('Logout function called');
         localStorage.removeItem('jwtToken');
+        localStorage.removeItem('refreshToken');
+        console.log('Tokens removed, redirecting to login');
         window.location.href = '/login';
     };
 
@@ -26,7 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login';
         return;
     }
-    // Try to access a protected endpoint to verify JWT
+
+    // Function to handle when user ID is ready
     function onUserIdReady() {
         if (window.currentUserId) {
             // If chat tab is active, load contacts immediately
@@ -36,41 +87,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    fetch('/api/auth/validate', {
+
+    // Try to access a protected endpoint to verify JWT using apiFetch
+    apiFetch('/api/auth/validate', {
         method: 'GET',
-        headers: {
-            'Authorization': 'Bearer ' + token,
-            'Accept': 'application/json'
-        },
         credentials: 'include'
     }).then(res => {
-        if (res.status === 200) {
+        if (res && res.status === 200) {
+            console.log('Token validation successful, fetching user info...');
             // Valid token, fetch user info
-            fetch('/api/auth/me', {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Accept': 'application/json'
-                }
+            apiFetch('/api/auth/me', {
+                method: 'GET'
             })
             .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch user info');
+                console.log('Response from /api/auth/me:', res.status, res.ok);
+                if (!res.ok) {
+                    console.error('Failed to fetch user info - response not ok');
+                    throw new Error('Failed to fetch user info');
+                }
                 return res.json();
             })
             .then(user => {
+                console.log('User data received:', user);
+                if (!user || !user.userId) {
+                    console.error('Invalid user data received:', user);
+                    throw new Error('Invalid user data');
+                }
                 window.currentUserId = user.userId;
+                console.log('Set currentUserId to:', window.currentUserId);
+
+                // Update the navbar with the current user's name
+                const userNameElement = document.getElementById('current-user-name');
+                if (userNameElement) {
+                    userNameElement.textContent = user.username || user.email || 'User';
+                }
+
                 onUserIdReady();
                 if (dashboardContent) dashboardContent.style.display = '';
                 if (loadingDiv) document.body.removeChild(loadingDiv);
+                console.log('Dashboard loaded successfully');
             })
             .catch(err => {
+                console.error('Error in user info fetch chain:', err);
                 if (loadingDiv) loadingDiv.innerHTML = '<div class="alert alert-danger">Session valid, but failed to load user info.</div>';
             });
-        } else {
+        } else if (res) {
+            console.log('Token validation failed, status:', res.status);
             if (loadingDiv) loadingDiv.innerHTML = '<div class="alert alert-danger">Session invalid. Please log in again.</div>';
             setTimeout(() => { window.location.href = '/login'; }, 2000);
         }
-    }).catch(() => {
+    }).catch((err) => {
+        console.error('Error in token validation:', err);
         if (loadingDiv) loadingDiv.innerHTML = '<div class="alert alert-danger">Could not validate session. Please log in again.</div>';
         setTimeout(() => { window.location.href = '/login'; }, 2000);
     });
@@ -241,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('chat-form').style.display = '';
                     loadChatMessages(selectedContactId);
                     startChatPolling(selectedContactId);
-                    // Highlight selected contact
+                    // Remove active from all, add to clicked
                     document.querySelectorAll('#chat-contacts-list .list-group-item').forEach(item => item.classList.remove('active'));
                     li.classList.add('active');
                 };
@@ -344,10 +411,4 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    // Example: Use JWT token for protected API call
-    // fetch('/api/protected-endpoint', {
-    //     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
-    // })
-    // .then(res => res.json())
-    // .then(data => { /* handle data */ });
 });
