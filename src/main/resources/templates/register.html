@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Message App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/register-style.css">
+  <!-- Add CSRF token for Spring Security -->
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="text-center mb-4">
+          <i class="fas fa-comments fa-4x text-primary mb-3"></i>
+          <h1 class="register-heading mb-4">Create Account</h1>
+        </div>
+        <div class="card o-hidden border-0 shadow-lg">
+          <div class="card-body p-5">
+            <!-- Alert for displaying messages -->
+            <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+            <form id="registerForm" class="user">
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-user"></i>
+                  </span>
+                  <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+                  <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                  <input type="password" class="form-control" id="password" name="passwordHash" placeholder="Password" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-key"></i>
+                  </span>
+                  <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm Password" required>
+                </div>
+              </div>
+              <button type="submit" id="registerBtn" class="btn btn-primary btn-block fw-bold py-3 mb-3">
+                Register Account
+              </button>
+              <hr>
+              <div class="text-center">
+                <a href="/login" class="text-decoration-none">Already have an account? Login!</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const registerForm = document.getElementById('registerForm');
+      const alertMessage = document.getElementById('alertMessage');
+      console.log('Register form script loaded');
+
+      // Display alert message with appropriate styling
+      function showAlert(message, type) {
+      console.log(`Showing alert: ${message} (${type})`);
+        alertMessage.textContent = message;
+        alertMessage.className = `alert alert-${type}`;
+        alertMessage.classList.remove('d-none');
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          alertMessage.classList.add('d-none');
+        }, 5000);
+      }
+
+      // Form submission handler
+      registerForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        console.log('Register form submitted');
+
+        // Get form values
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // Validate passwords match
+        if (password !== confirmPassword) {
+          showAlert('Passwords do not match!', 'danger');
+          return;
+        }
+
+        // Disable button to prevent multiple submissions
+        const registerBtn = document.getElementById('registerBtn');
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...';
+
+        // Create user object from form data
+        const userData = {
+          username: username,
+          email: email,
+          passwordHash: password,
+
+        };
+
+        console.log('Sending registration data:', JSON.stringify(userData));
+
+        // Send AJAX request
+        fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || ''
+          },
+          body: JSON.stringify(userData)
+        })
+        .then(response => {
+          console.log('Response received:', response.status, response.statusText);
+          // Check content type to handle non-JSON responses
+          const contentType = response.headers.get('content-type');
+          console.log('Content-Type:', contentType);
+
+          if (contentType && contentType.includes('application/json')) {
+            return response.json().then(data => {
+              console.log('Parsed JSON data:', data);
+              if (!response.ok) {
+                throw new Error(data.message || 'Registration failed!');
+              }
+              return data;
+            });
+          } else {
+            // Handle non-JSON responses (like HTML error pages)
+            return response.text().then(text => {
+              console.error('Non-JSON response:', text.substring(0, 100) + '...');
+              throw new Error('Server returned an invalid response format');
+            });
+          }
+        })
+        .then(data => {
+          // Success - show message and redirect after delay
+          console.log('Registration successful:', data);
+          showAlert('Registration successful! Redirecting to login...', 'success');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        })
+        .catch(error => {
+          // Show error message
+          console.error('Registration error:', error);
+          showAlert(error.message || 'An error occurred during registration.', 'danger');
+        })
+        .finally(() => {
+          // Re-enable button
+          registerBtn.disabled = false;
+          registerBtn.textContent = 'Register Account';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

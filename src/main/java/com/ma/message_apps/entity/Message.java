@@ -35,6 +35,6 @@ public class Message {
     private Boolean isRead;
 
     @Column(name = "created_at")
-    private Timestamp timestamp;
+    private Timestamp createdAt;
 
 }
