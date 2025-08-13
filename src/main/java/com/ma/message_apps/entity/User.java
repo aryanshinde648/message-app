@@ -31,8 +31,10 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private UserStatus status;
+    private UserStatus status = UserStatus.OFFLINE; // Default to offline
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+
 }
