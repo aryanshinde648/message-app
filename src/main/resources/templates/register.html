@@ -1,169 +1,179 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Register - Message App</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="/css/main.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Message App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/register-style.css">
+  <!-- Add CSRF token for Spring Security -->
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
 </head>
-<body class="auth-body">
-    <!-- Animated Background -->
-    <div class="auth-background">
-        <div class="floating-shapes">
-            <div class="shape shape-1">💬</div>
-            <div class="shape shape-2">✨</div>
-            <div class="shape shape-3">🌟</div>
-            <div class="shape shape-4">💫</div>
-            <div class="shape shape-5">🔮</div>
-            <div class="shape shape-6">💎</div>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="text-center mb-4">
+          <i class="fas fa-comments fa-4x text-primary mb-3"></i>
+          <h1 class="register-heading mb-4">Create Account</h1>
         </div>
+        <div class="card o-hidden border-0 shadow-lg">
+          <div class="card-body p-5">
+            <!-- Alert for displaying messages -->
+            <div id="alertMessage" class="alert d-none" role="alert"></div>
+
+            <form id="registerForm" class="user">
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-user"></i>
+                  </span>
+                  <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+                  <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                  <input type="password" class="form-control" id="password" name="passwordHash" placeholder="Password" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-key"></i>
+                  </span>
+                  <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm Password" required>
+                </div>
+              </div>
+              <button type="submit" id="registerBtn" class="btn btn-primary btn-block fw-bold py-3 mb-3">
+                Register Account
+              </button>
+              <hr>
+              <div class="text-center">
+                <a href="/login" class="text-decoration-none">Already have an account? Login!</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Modern Navbar -->
-    <nav class="auth-navbar">
-        <div class="container">
-            <a class="auth-brand" th:href="@{/}">
-                <span class="brand-icon">💬</span>
-                <span class="brand-text">Message App</span>
-            </a>
-            <div class="auth-nav-links">
-                <a class="auth-nav-link" th:href="@{/login}">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Login
-                </a>
-                <a class="auth-nav-link active" th:href="@{/register}">
-                    <i class="bi bi-person-plus"></i>
-                    Register
-                </a>
-            </div>
-        </div>
-    </nav>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const registerForm = document.getElementById('registerForm');
+      const alertMessage = document.getElementById('alertMessage');
+      console.log('Register form script loaded');
 
-    <!-- Main Content -->
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-card-header">
-                <div class="auth-icon">
-                    <span class="icon-emoji">🎉</span>
-                </div>
-                <h2 class="auth-title">Join the Community!</h2>
-                <p class="auth-subtitle">Create your account and start connecting</p>
-            </div>
+      // Display alert message with appropriate styling
+      function showAlert(message, type) {
+      console.log(`Showing alert: ${message} (${type})`);
+        alertMessage.textContent = message;
+        alertMessage.className = `alert alert-${type}`;
+        alertMessage.classList.remove('d-none');
 
-            <div class="auth-card-body">
-                <form id="registerForm" class="auth-form">
-                    <div class="form-floating-group">
-                        <div class="input-group">
-                            <span class="input-icon">👤</span>
-                            <input type="text" class="form-control auth-input" id="username" name="username" placeholder="Username" required>
-                            <label for="username" class="floating-label">Username</label>
-                        </div>
-                    </div>
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          alertMessage.classList.add('d-none');
+        }, 5000);
+      }
 
-                    <div class="form-floating-group">
-                        <div class="input-group">
-                            <span class="input-icon">📧</span>
-                            <input type="email" class="form-control auth-input" id="email" name="email" placeholder="Email" required>
-                            <label for="email" class="floating-label">Email Address</label>
-                        </div>
-                    </div>
+      // Form submission handler
+      registerForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        console.log('Register form submitted');
 
-                    <div class="form-floating-group">
-                        <div class="input-group">
-                            <span class="input-icon">🔒</span>
-                            <input type="password" class="form-control auth-input" id="passwordHash" name="passwordHash" placeholder="Password" required>
-                            <label for="passwordHash" class="floating-label">Password</label>
-                            <button type="button" class="password-toggle" onclick="togglePassword('passwordHash')">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                        <div class="password-strength">
-                            <div class="strength-bar">
-                                <div class="strength-fill" id="passwordStrength"></div>
-                            </div>
-                            <small class="strength-text" id="strengthText">Enter a password</small>
-                        </div>
-                    </div>
+        // Get form values
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
 
-                    <button type="submit" class="auth-submit-btn">
-                        <span class="btn-text">Create Account</span>
-                        <span class="btn-icon">✨</span>
-                    </button>
-                </form>
-
-                <div id="registerMessage" class="auth-message"></div>
-
-                <div class="auth-divider">
-                    <span>or</span>
-                </div>
-
-                <div class="auth-footer">
-                    <p>Already have an account?</p>
-                    <a th:href="@{/login}" class="auth-link">
-                        Sign In <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/register.js" type="text/javascript"></script>
-    <script>
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const icon = event.target;
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'bi bi-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'bi bi-eye';
-            }
+        // Validate passwords match
+        if (password !== confirmPassword) {
+          showAlert('Passwords do not match!', 'danger');
+          return;
         }
 
-        // Password strength indicator
-        document.getElementById('passwordHash').addEventListener('input', function() {
-            const password = this.value;
-            const strengthBar = document.getElementById('passwordStrength');
-            const strengthText = document.getElementById('strengthText');
+        // Disable button to prevent multiple submissions
+        const registerBtn = document.getElementById('registerBtn');
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Registering...';
 
-            let strength = 0;
-            let text = '';
-            let color = '';
+        // Create user object from form data
+        const userData = {
+          username: username,
+          email: email,
+          passwordHash: password,
 
-            if (password.length >= 8) strength++;
-            if (/[A-Z]/.test(password)) strength++;
-            if (/[a-z]/.test(password)) strength++;
-            if (/[0-9]/.test(password)) strength++;
-            if (/[^A-Za-z0-9]/.test(password)) strength++;
+        };
 
-            switch(strength) {
-                case 0:
-                case 1:
-                    text = 'Weak';
-                    color = '#ff4757';
-                    break;
-                case 2:
-                case 3:
-                    text = 'Medium';
-                    color = '#ffa726';
-                    break;
-                case 4:
-                case 5:
-                    text = 'Strong';
-                    color = '#2ecc71';
-                    break;
-            }
+        console.log('Sending registration data:', JSON.stringify(userData));
 
-            strengthBar.style.width = (strength * 20) + '%';
-            strengthBar.style.background = color;
-            strengthText.textContent = password ? text : 'Enter a password';
-            strengthText.style.color = color;
+        // Send AJAX request
+        fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || ''
+          },
+          body: JSON.stringify(userData)
+        })
+        .then(response => {
+          console.log('Response received:', response.status, response.statusText);
+          // Check content type to handle non-JSON responses
+          const contentType = response.headers.get('content-type');
+          console.log('Content-Type:', contentType);
+
+          if (contentType && contentType.includes('application/json')) {
+            return response.json().then(data => {
+              console.log('Parsed JSON data:', data);
+              if (!response.ok) {
+                throw new Error(data.message || 'Registration failed!');
+              }
+              return data;
+            });
+          } else {
+            // Handle non-JSON responses (like HTML error pages)
+            return response.text().then(text => {
+              console.error('Non-JSON response:', text.substring(0, 100) + '...');
+              throw new Error('Server returned an invalid response format');
+            });
+          }
+        })
+        .then(data => {
+          // Success - show message and redirect after delay
+          console.log('Registration successful:', data);
+          showAlert('Registration successful! Redirecting to login...', 'success');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        })
+        .catch(error => {
+          // Show error message
+          console.error('Registration error:', error);
+          showAlert(error.message || 'An error occurred during registration.', 'danger');
+        })
+        .finally(() => {
+          // Re-enable button
+          registerBtn.disabled = false;
+          registerBtn.textContent = 'Register Account';
         });
-    </script>
+      });
+    });
+  </script>
 </body>
 </html>
