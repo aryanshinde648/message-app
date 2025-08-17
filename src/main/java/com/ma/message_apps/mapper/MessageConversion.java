@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface MessageConversion {
-    Message toEntity(MessageDto messageDto);
-    MessageDto toDto(Message message);
+
+    MessageDto toMessageDto(Message message);
+    Message toMessage(MessageDto messageDto);
 }
