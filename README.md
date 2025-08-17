@@ -5,7 +5,7 @@ A modern, secure messaging platform built with Spring Boot and modern JavaScript
 ## Technology Stack
 
 ### Backend
-- **Java 17**
+- **Java 24**
 - **Spring Boot 3.2**
 - **Spring Security** - Authentication and authorization
 - **Spring Data JPA** - Database access with Hibernate
@@ -96,7 +96,7 @@ The application follows a layered architecture with clear separation of concerns
 ## Setup Instructions
 
 ### Prerequisites
-- JDK 17+
+- JDK 24+
 - Maven 3.6+
 - MySQL (optional, can use H2 for development)
 
